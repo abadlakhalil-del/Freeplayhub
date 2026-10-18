@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FreePlay Hub</title>
+<style>
+:root{
+  --bg:#0f1220; --panel:#171b2e; --panel2:#1f2440; --text:#e9ecf8; --muted:#98a0c3;
+  --accent:#6c5ce7; --accent2:#00d1b2; --warn:#ffb020; --radius:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",system-ui,-apple-system,Tahoma,Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+a{color:inherit;text-decoration:none}
+button{font:inherit;cursor:pointer;border:0;color:inherit}
+.container{max-width:1180px;margin:0 auto;padding:0 16px}
+
+/* Header */
+header{position:sticky;top:0;z-index:50;background:rgba(15,18,32,.92);backdrop-filter:blur(10px);border-bottom:1px solid #262c4d}
+.nav{display:flex;align-items:center;gap:12px;padding:12px 0}
+.logo{font-weight:800;font-size:1.25rem;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.logo span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.search{flex:1;position:relative;min-width:0}
+.search input{width:100%;padding:11px 42px;border-radius:999px;border:1px solid #2b3260;background:var(--panel);color:var(--text);outline:none;font-size:.95rem}
+.search input:focus{border-color:var(--accent)}
+.search::before{content:"🔍";position:absolute;inset-inline-start:15px;top:50%;transform:translateY(-50%);font-size:.9rem}
+.nav-links{display:flex;gap:6px}
+.nav-links button{background:transparent;padding:8px 12px;border-radius:10px;color:var(--muted);font-weight:600}
+.nav-links button:hover,.nav-links button.active{background:var(--panel2);color:var(--text)}
+.lang{background:var(--panel);color:var(--text);border:1px solid #2b3260;border-radius:10px;padding:8px 10px;font:inherit;font-size:.9rem}
+
+/* Hero */
+.hero{margin:22px 0;border-radius:24px;padding:34px 28px;background:linear-gradient(135deg,#3a2fb5,#6c5ce7 45%,#00b4a0);position:relative;overflow:hidden}
+.hero::after{content:"🎮";position:absolute;inset-inline-end:24px;bottom:-20px;font-size:9rem;opacity:.18;transform:rotate(-12deg)}
+.hero h1{font-size:clamp(1.5rem,4vw,2.4rem);line-height:1.3;max-width:600px}
+.hero p{margin:10px 0 18px;max-width:540px;opacity:.92}
+.hero .stats{display:flex;gap:26px;flex-wrap:wrap}
+.hero .stats b{display:block;font-size:1.3rem}
+.hero .stats small{opacity:.85}
+
+/* Filters */
+.filters{display:flex;flex-direction:column;gap:12px;margin-bottom:18px}
+.row{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.row::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;padding:8px 16px;border-radius:999px;background:var(--panel);border:1px solid #2b3260;color:var(--muted);font-weight:600;font-size:.9rem}
+.chip:hover{color:var(--text)}
+.chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
+.toolbar h2{font-size:1.15rem}
+select{background:var(--panel);color:var(--text);border:1px solid #2b3260;border-radius:10px;padding:8px 10px;font:inherit}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px;margin-bottom:40px}
+.card{background:var(--panel);border-radius:var(--radius);overflow:hidden;border:1px solid #262c4d;cursor:pointer;transition:transform .18s,border-color .18s;display:flex;flex-direction:column}
+.card:hover{transform:translateY(-4px);border-color:var(--accent)}
+.thumb{height:130px;display:grid;place-items:center;font-size:3.6rem;position:relative;overflow:hidden}
+.thumb img,.m-icon img,.shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.badge{position:absolute;z-index:2;top:10px;inset-inline-start:10px;background:rgba(0,0,0,.55);padding:3px 10px;border-radius:999px;font-size:.72rem;font-weight:700}
+.fav{position:absolute;z-index:2;top:8px;inset-inline-end:8px;background:rgba(0,0,0,.55);width:32px;height:32px;border-radius:50%;display:grid;place-items:center}
+.fav.on{background:#ff4d6d}
+.info{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
+.info h3{font-size:1rem}
+.meta{display:flex;justify-content:space-between;color:var(--muted);font-size:.82rem;gap:6px}
+.plats{display:flex;gap:6px;font-size:.95rem;margin-top:auto}
+.dl-mini{margin-top:6px;background:linear-gradient(135deg,var(--accent),#8b7bff);padding:9px;border-radius:10px;font-weight:700;text-align:center;font-size:.9rem}
+.empty{text-align:center;color:var(--muted);padding:50px 0;grid-column:1/-1}
+
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(5,7,16,.75);display:none;align-items:flex-end;justify-content:center;z-index:100}
+.overlay.open{display:flex}
+.modal{background:var(--panel);width:100%;max-width:760px;max-height:92vh;overflow-y:auto;border-radius:24px 24px 0 0;animation:up .25s ease}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+@media(min-width:700px){.overlay{align-items:center;padding:20px}.modal{border-radius:24px}}
+.m-head{display:flex;gap:16px;padding:20px;align-items:center;position:relative}
+.m-icon{width:96px;height:96px;border-radius:22px;display:grid;place-items:center;font-size:3rem;flex:0 0 auto;position:relative;overflow:hidden}
+.m-head h2{font-size:1.4rem;padding-inline-end:40px}
+.m-head p{color:var(--muted);font-size:.9rem}
+.close{position:absolute;top:14px;inset-inline-end:14px;background:var(--panel2);width:36px;height:36px;border-radius:50%;font-size:1rem}
+.m-body{padding:0 20px 24px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:6px 0 18px}
+.fact{background:var(--panel2);border-radius:12px;padding:10px;text-align:center}
+.fact b{display:block}
+.fact small{color:var(--muted)}
+.m-body h4{margin:16px 0 8px}
+.m-body p.desc{color:#c3c9e8}
+.shots{display:flex;gap:10px;overflow-x:auto;padding:4px 0}
+.shot{flex:0 0 120px;height:200px;border-radius:14px;display:grid;place-items:center;font-size:2rem;position:relative;overflow:hidden}
+.dl-list{display:grid;gap:10px}
+.dl-group{font-size:.8rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.dl-btn{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:var(--panel2);border:1px solid #2f3668;font-weight:600;width:100%;text-align:start}
+.dl-btn:hover{border-color:var(--accent2)}
+.dl-btn .ic{font-size:1.4rem}
+.dl-btn small{display:block;color:var(--muted);font-weight:400}
+.dl-btn .go{margin-inline-start:auto;background:var(--accent2);color:#05231f;padding:6px 12px;border-radius:8px;font-weight:800;font-size:.85rem;white-space:nowrap}
+.note{font-size:.78rem;color:var(--muted);margin-top:12px}
+.stars{color:var(--warn)}
+
+/* Play now */
+.play-btn{background:linear-gradient(135deg,#00b894,#00d1b2);color:#04251f;font-weight:800;padding:9px;border-radius:10px;font-size:.9rem;width:100%}
+.play-btn:hover{filter:brightness(1.08)}
+.play-btn.big{padding:14px;font-size:1.05rem;margin:4px 0 14px;border-radius:12px}
+.card .play-btn{margin-top:6px}
+.card .play-btn + .dl-mini{margin-top:4px}
+#playerOverlay{align-items:stretch;padding:0;background:#0b0d18}
+.p-box{display:flex;flex-direction:column;width:100%;height:100%}
+.p-bar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--panel);border-bottom:1px solid #262c4d;gap:10px}
+.p-bar b{font-size:1rem}
+.p-bar .p-actions{display:flex;gap:8px;align-items:center}
+.p-bar a,.p-bar button{background:var(--panel2);border:1px solid #2f3668;color:var(--text);padding:7px 12px;border-radius:10px;font-size:.88rem;font-weight:600}
+#pFrame{flex:1;width:100%;border:0;background:#262421}
+
+/* Donate */
+.donate-btn{background:linear-gradient(135deg,#0070ba,#1546a0);color:#fff;padding:8px 14px;border-radius:10px;font-weight:700;font-size:.9rem;white-space:nowrap}
+.donate-btn:hover{filter:brightness(1.12)}
+.support{background:linear-gradient(135deg,#0b2a4a,#12315e);border:1px solid #1d4f8f;border-radius:20px;padding:24px;margin:0 0 40px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.support h3{font-size:1.2rem;margin-bottom:4px}
+.support p{color:#b9c8e6;max-width:560px}
+.support .donate-btn{padding:12px 22px;font-size:1rem}
+.d-modal{padding:24px;max-width:460px;position:relative}
+.d-modal h2{font-size:1.3rem;margin-bottom:6px;padding-inline-end:40px}
+.d-modal p{color:var(--muted);font-size:.92rem}
+.amounts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0 10px}
+.amt{background:var(--panel2);border:1px solid #2f3668;border-radius:12px;padding:12px 0;font-weight:700}
+.amt.active{background:#0070ba;border-color:#0070ba;color:#fff}
+.d-custom{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #2f3668;background:var(--panel2);color:var(--text);font:inherit;outline:none;margin-bottom:14px}
+.d-custom:focus{border-color:#0070ba}
+.d-go{width:100%;background:#ffc439;color:#111;font-weight:800;padding:14px;border-radius:12px;font-size:1rem}
+.d-go:hover{filter:brightness(1.06)}
+.d-note{margin-top:12px;font-size:.78rem;text-align:center}
+@media(max-width:640px){.donate-btn{padding:8px 10px;font-size:.82rem}}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(90px);background:#222850;border:1px solid var(--accent);padding:12px 18px;border-radius:12px;z-index:200;transition:transform .3s;max-width:92vw;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+footer{border-top:1px solid #262c4d;padding:26px 0;color:var(--muted);font-size:.88rem;text-align:center}
+@media(max-width:640px){
+  .nav{flex-wrap:wrap}
+  .search{order:3;flex-basis:100%}
+  .nav-links{display:none}
+  .logo{flex:1}
+  .hero{padding:26px 20px}
+  .grid{grid-template-columns:repeat(2,1fr);gap:12px}
+  .thumb{height:100px;font-size:2.8rem}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container nav">
+    <a class="logo" href="#" id="logo">🎮 <span>FreePlay Hub</span></a>
+    <nav class="nav-links">
+      <button class="active" data-view="all" data-i18n="home"></button>
+      <button data-view="fav">❤ <span data-i18n="favorites"></span></button>
+    </nav>
+    <button class="donate-btn" data-donate>💙 <span data-i18n="donate"></span></button>
+    <select class="lang" id="lang" aria-label="Language">
+      <option value="ar">العربية</option>
+      <option value="en">English</option>
+      <option value="fr">Français</option>
+    </select>
+    <div class="search"><input id="q" type="search" data-i18n-ph="search" autocomplete="off"></div>
+  </div>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <h1 data-i18n="heroTitle"></h1>
+    <p data-i18n="heroText"></p>
+    <div class="stats">
+      <div><b id="statGames">0</b><small data-i18n="statGames"></small></div>
+      <div><b>5</b><small data-i18n="statPlatforms"></small></div>
+      <div><b>100%</b><small data-i18n="statFree"></small></div>
+    </div>
+  </section>
+
+  <section class="filters">
+    <div class="row" id="platRow"></div>
+    <div class="row" id="catRow"></div>
+  </section>
+
+  <div class="toolbar">
+    <h2 id="title"></h2>
+    <select id="sort"></select>
+  </div>
+  <section class="grid" id="grid"></section>
+
+  <section class="support">
+    <div>
+      <h3>💙 <span data-i18n="supportTitle"></span></h3>
+      <p data-i18n="supportText"></p>
+    </div>
+    <button class="donate-btn" data-donate>💳 <span data-i18n="donateGo"></span></button>
+  </section>
+</main>
+
+<footer>
+  <div class="container">© <span id="yr"></span> FreePlay Hub · <span data-i18n="footer"></span></div>
+</footer>
+
+<div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
+<div class="overlay" id="playerOverlay">
+  <div class="p-box">
+    <div class="p-bar">
+      <b id="pTitle"></b>
+      <div class="p-actions">
+        <a id="pNew" href="#" target="_blank" rel="noopener">↗ <span id="pNewTxt"></span></a>
+        <button data-close-player>✕ <span id="pCloseTxt"></span></button>
+      </div>
+    </div>
+    <iframe id="pFrame" title="Game" allow="fullscreen" src="about:blank"></iframe>
+  </div>
+</div>
+<div class="overlay" id="donateOverlay"><div class="modal d-modal" id="donateModal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   1) TRANSLATIONS — add a new language by copying one block and
+      adding an <option> to the #lang select above.
+   ===================================================================== */
+const I18N = {
+  ar:{ dir:"rtl", locale:"ar",
+    home:"الرئيسية", favorites:"المفضلة", search:"ابحث عن لعبة مجانية…",
+    playNow:"العب الآن", openNewTab:"فتح في صفحة جديدة", closePlayer:"إغلاق",
+    donate:"تبرّع", supportTitle:"ادعم الموقع",
+    supportText:"الألعاب مجانية للجميع. تبرّعك يساعدنا على تغطية تكاليف الاستضافة وإضافة ألعاب جديدة.",
+    donateTitle:"التبرع عبر PayPal", donateChoose:"اختر المبلغ أو أدخل مبلغاً آخر", donateOther:"مبلغ آخر",
+    donateGo:"التبرع عبر PayPal", donateSecure:"تتم عملية الدفع بالكامل على موقع PayPal الآمن، ولا نحتفظ بأي بيانات بنكية.",
+    donateNoConfig:"لم يتم إعداد حساب PayPal بعد", donateInvalid:"أدخل مبلغاً صحيحاً", donateThanks:"شكراً لدعمك! 💙",
+    heroTitle:"ألعاب مجانية لكل الأجهزة. بدون دفع. بدون تعقيد.",
+    heroText:"اختر منصتك، ابحث عن لعبتك المفضلة وحمّلها بنقرة واحدة — أندرويد، آيفون، ويندوز، ماك أو لينكس.",
+    statGames:"لعبة مجانية", statPlatforms:"منصات", statFree:"مجاني",
+    allPlatforms:"كل المنصات", allCats:"الكل",
+    allGames:"كل الألعاب", myFavs:"ألعابي المفضلة",
+    sortPop:"الأكثر شعبية", sortRate:"الأعلى تقييماً", sortNew:"الأحدث", sortSize:"الأصغر حجماً",
+    download:"تحميل", noResults:"😕 لا توجد ألعاب مطابقة. جرّب بحثاً أو فلتراً آخر.",
+    downloads:"تحميل", size:"الحجم", version:"الإصدار", updated:"آخر تحديث",
+    screenshots:"لقطات الشاشة", about:"عن اللعبة", mobile:"الهاتف", pc:"الحاسوب",
+    downloadFor:"لـ", tip:"نصيحة: اختر النسخة المناسبة لجهازك، ولا تثبّت إلا من مصادر موثوقة.",
+    favAdded:"تمت الإضافة إلى المفضلة ❤", favRemoved:"تمت الإزالة من المفضلة",
+    starting:"جاري بدء تحميل", noLink:"رابط التحميل غير متوفر حالياً",
+    footer:"جميع الألعاب المعروضة مجانية. حمّل دائماً من مصادر رسمية.",
+    cats:{racing:"سباقات",rpg:"أدوار",simulation:"محاكاة",action:"حركة",puzzle:"ألغاز",strategy:"استراتيجية",sports:"رياضة",casual:"خفيفة",platformer:"منصات",board:"لوحية"}
+  },
+  en:{ dir:"ltr", locale:"en",
+    home:"Home", favorites:"Favorites", search:"Search free games…",
+    playNow:"Play now", openNewTab:"Open in new tab", closePlayer:"Close",
+    donate:"Donate", supportTitle:"Support the site",
+    supportText:"All games are free for everyone. Your donation helps cover hosting costs and add new games.",
+    donateTitle:"Donate with PayPal", donateChoose:"Choose an amount or enter your own", donateOther:"Other amount",
+    donateGo:"Donate with PayPal", donateSecure:"Payment is handled entirely on PayPal's secure site. We never store any payment details.",
+    donateNoConfig:"PayPal account is not set up yet", donateInvalid:"Enter a valid amount", donateThanks:"Thank you for your support! 💙",
+    heroTitle:"Free games for every device. No payment. No fuss.",
+    heroText:"Pick your platform, find a game you like and download it in one tap — Android, iOS, Windows, macOS or Linux.",
+    statGames:"Free games", statPlatforms:"Platforms", statFree:"Free",
+    allPlatforms:"All platforms", allCats:"All",
+    allGames:"All Games", myFavs:"My Favorites",
+    sortPop:"Most popular", sortRate:"Top rated", sortNew:"Newest", sortSize:"Smallest size",
+    download:"Download", noResults:"😕 No games found. Try another search or filter.",
+    downloads:"Downloads", size:"Size", version:"Version", updated:"Updated",
+    screenshots:"Screenshots", about:"About this game", mobile:"Mobile", pc:"PC",
+    downloadFor:"for", tip:"Tip: choose the version that matches your device and only install from trusted sources.",
+    favAdded:"Added to favorites ❤", favRemoved:"Removed from favorites",
+    starting:"Starting download of", noLink:"Download link is not available yet",
+    footer:"All listed games are free. Always download from official sources.",
+    cats:{racing:"Racing",rpg:"RPG",simulation:"Simulation",action:"Action",puzzle:"Puzzle",strategy:"Strategy",sports:"Sports",casual:"Casual",platformer:"Platformer",board:"Board"}
+  },
+  fr:{ dir:"ltr", locale:"fr",
+    home:"Accueil", favorites:"Favoris", search:"Rechercher un jeu gratuit…",
+    playNow:"Jouer maintenant", openNewTab:"Ouvrir dans un nouvel onglet", closePlayer:"Fermer",
+    donate:"Faire un don", supportTitle:"Soutenez le site",
+    supportText:"Tous les jeux sont gratuits pour tous. Votre don aide à payer l'hébergement et à ajouter de nouveaux jeux.",
+    donateTitle:"Faire un don via PayPal", donateChoose:"Choisissez un montant ou saisissez le vôtre", donateOther:"Autre montant",
+    donateGo:"Donner via PayPal", donateSecure:"Le paiement se fait entièrement sur le site sécurisé de PayPal. Nous ne conservons aucune donnée bancaire.",
+    donateNoConfig:"Le compte PayPal n'est pas encore configuré", donateInvalid:"Saisissez un montant valide", donateThanks:"Merci pour votre soutien ! 💙",
+    heroTitle:"Des jeux gratuits pour tous vos appareils. Sans paiement. Sans prise de tête.",
+    heroText:"Choisissez votre plateforme, trouvez un jeu et téléchargez-le en un clic — Android, iOS, Windows, macOS ou Linux.",
+    statGames:"Jeux gratuits", statPlatforms:"Plateformes", statFree:"Gratuit",
+    allPlatforms:"Toutes les plateformes", allCats:"Tous",
+    allGames:"Tous les jeux", myFavs:"Mes favoris",
+    sortPop:"Plus populaires", sortRate:"Mieux notés", sortNew:"Plus récents", sortSize:"Plus légers",
+    download:"Télécharger", noResults:"😕 Aucun jeu trouvé. Essayez une autre recherche ou un autre filtre.",
+    downloads:"Téléchargements", size:"Taille", version:"Version", updated:"Mis à jour",
+    screenshots:"Captures d'écran", about:"À propos du jeu", mobile:"Mobile", pc:"PC",
+    downloadFor:"pour", tip:"Astuce : choisissez la version adaptée à votre appareil et installez uniquement depuis des sources fiables.",
+    favAdded:"Ajouté aux favoris ❤", favRemoved:"Retiré des favoris",
+    starting:"Démarrage du téléchargement de", noLink:"Le lien de téléchargement n'est pas encore disponible",
+    footer:"Tous les jeux listés sont gratuits. Téléchargez toujours depuis des sources officielles.",
+    cats:{racing:"Course",rpg:"RPG",simulation:"Simulation",action:"Action",puzzle:"Puzzle",strategy:"Stratégie",sports:"Sport",casual:"Décontracté",platformer:"Plateforme",board:"Plateau"}
+  }
+};
+
+/* =====================================================================
+   2) PLATFORMS
+   ===================================================================== */
+const PLATFORMS = {
+  android:{label:"Android", icon:"🤖", kind:"mobile", ext:"APK / Play Store"},
+  ios:{label:"iOS", icon:"🍎", kind:"mobile", ext:"App Store"},
+  windows:{label:"Windows", icon:"🪟", kind:"pc", ext:"EXE"},
+  mac:{label:"macOS", icon:"💻", kind:"pc", ext:"DMG"},
+  linux:{label:"Linux", icon:"🐧", kind:"pc", ext:"AppImage / DEB"}
+};
+
+/* =====================================================================
+   3) GAMES — this is the only part you need to edit.
+   For every game:
+     name   : the game name (same in all languages, or use {ar:"",en:"",fr:""})
+     img    : cover image URL (leave "" to use the emoji + colors)
+     shots  : array of screenshot URLs (optional)
+     links  : download URL per platform, e.g. android:"https://…/game.apk"
+              (empty "" = "link not available yet")
+     desc   : description in each language
+   ===================================================================== */
+const GAMES = [
+  {id:1,name:"Neon Racer Rush",cat:"racing",emoji:"🏎️",c:["#ff416c","#ff4b2b"],img:"",shots:[],rating:4.7,dl:5200000,size:96,ver:"2.4.1",date:"2026-09-28",dev:"Pixel Forge",plats:["android","ios","windows"],
+   links:{android:"",ios:"",windows:""},
+   desc:{ar:"سباقات سريعة في مدن مضيئة. افتح السيارات وتفوّق على المنافسين.",en:"Drift through glowing cyber-cities in this fast arcade racer. Unlock cars and beat your rivals.",fr:"Dérapez dans des villes néon dans ce jeu de course arcade. Débloquez des voitures et battez vos rivaux."}},
+  {id:2,name:"Dungeon Lanterns",cat:"rpg",emoji:"🗡️",c:["#614385","#516395"],img:"",shots:[],rating:4.8,dl:3900000,size:312,ver:"1.9.0",date:"2026-10-05",dev:"Moth Studio",plats:["android","windows","mac","linux"],
+   links:{android:"",windows:"",mac:"",linux:""},
+   desc:{ar:"لعبة استكشاف أقبية ممتعة وصعبة. أشعل فانوسك وجنّد الحلفاء واكتشف الأسرار.",en:"A cozy but challenging dungeon crawler. Light your lantern, recruit allies and uncover secrets.",fr:"Un dungeon crawler chaleureux mais exigeant. Allumez votre lanterne et recrutez des alliés."}},
+  {id:3,name:"Sky Farm Valley",cat:"simulation",emoji:"🌾",c:["#56ab2f","#a8e063"],img:"",shots:[],rating:4.6,dl:2800000,size:148,ver:"3.0.2",date:"2026-10-12",dev:"Greenleaf Games",plats:["android","ios","windows","mac"],
+   links:{android:"",ios:"",windows:"",mac:""},
+   desc:{ar:"ابنِ مزرعة عائمة،ازرع المحاصيل وربِّ الحيوانات وتاجر مع الجيران.",en:"Build a floating farm, grow crops, raise animals and trade with friendly neighbors.",fr:"Construisez une ferme flottante, cultivez, élevez des animaux et commercez avec vos voisins."}},
+  {id:4,name:"Block Heroes Arena",cat:"action",emoji:"⚔️",c:["#f7971e","#ffd200"],img:"",shots:[],rating:4.4,dl:6100000,size:210,ver:"5.2.0",date:"2026-08-30",dev:"Cubic Bros",plats:["android","ios","windows"],
+   links:{android:"",ios:"",windows:""},
+   desc:{ar:"معارك ساحة سريعة 5 ضد 5 مع أبطال مكعّبين وتحكّم بسيط.",en:"Fast 5v5 arena battles with blocky heroes, simple controls and endless customization.",fr:"Combats d'arène 5v5 rapides avec des héros cubiques et des commandes simples."}},
+  {id:5,name:"Puzzle Orchard",cat:"puzzle",emoji:"🍎",c:["#e52d27","#b31217"],img:"",shots:[],rating:4.5,dl:8300000,size:58,ver:"7.1.4",date:"2026-10-01",dev:"Sweet Logic",plats:["android","ios"],
+   links:{android:"",ios:""},
+   desc:{ar:"طابِق الفواكه وحُلّ أكثر من 1000 مرحلة مع موسيقى مريحة.",en:"Match fruits and solve over 1,000 hand-made levels with soothing music.",fr:"Associez des fruits et résolvez plus de 1 000 niveaux avec une musique apaisante."}},
+  {id:6,name:"Star Outpost Defense",cat:"strategy",emoji:"🛰️",c:["#0f2027","#2c5364"],img:"",shots:[],rating:4.6,dl:1900000,size:240,ver:"1.3.7",date:"2026-09-15",dev:"Orbit Labs",plats:["windows","mac","linux"],
+   links:{windows:"",mac:"",linux:""},
+   desc:{ar:"دافع عن محطتك الفضائية من موجات الأعداء وأدِر مواردك.",en:"Defend your space station from alien waves, build turrets and manage resources.",fr:"Défendez votre station spatiale contre des vagues d'aliens et gérez vos ressources."}},
+  {id:7,name:"Pocket Kicks 26",cat:"sports",emoji:"⚽",c:["#11998e","#38ef7d"],img:"",shots:[],rating:4.3,dl:7400000,size:180,ver:"4.0.0",date:"2026-10-10",dev:"Goal Line Co.",plats:["android","ios","windows"],
+   links:{android:"",ios:"",windows:""},
+   desc:{ar:"كرة قدم سريعة بتحكّم بالسحب، بطولات ومباريات ودية أونلاين.",en:"Quick-play football with swipe controls, tournaments and online friendlies.",fr:"Football rapide avec contrôles tactiles, tournois et matchs amicaux en ligne."}},
+  {id:8,name:"Shadow Alley Stealth",cat:"action",emoji:"🥷",c:["#232526","#414345"],img:"",shots:[],rating:4.5,dl:1500000,size:275,ver:"2.1.3",date:"2026-07-22",dev:"Nightowl",plats:["android","windows","linux"],
+   links:{android:"",windows:"",linux:""},
+   desc:{ar:"تسلّل بين الأسطح والأزقة دون أن يراك أحد، برسومات مرسومة يدوياً.",en:"Slip through rooftops and alleys unseen, with beautiful hand-drawn visuals.",fr:"Faufilez-vous sur les toits et dans les ruelles sans être vu, avec de superbes dessins."}},
+  {id:9,name:"Word Safari",cat:"puzzle",emoji:"🦁",c:["#f2994a","#f2c94c"],img:"",shots:[],rating:4.7,dl:4600000,size:42,ver:"6.5.1",date:"2026-10-14",dev:"Sweet Logic",plats:["android","ios","windows","mac"],
+   links:{android:"",ios:"",windows:"",mac:""},
+   desc:{ar:"سافر عبر السافانا بتكوين الكلمات. تحديات يومية ووضع بدون إنترنت.",en:"Travel the savannah by forming words. Daily challenges and a relaxing offline mode.",fr:"Traversez la savane en formant des mots. Défis quotidiens et mode hors ligne."}},
+  {id:10,name:"Kingdom Tactics Online",cat:"strategy",emoji:"🏰",c:["#4568dc","#b06ab3"],img:"",shots:[],rating:4.4,dl:2300000,size:420,ver:"8.8.8",date:"2026-09-02",dev:"Crown Interactive",plats:["windows","mac","android"],
+   links:{windows:"",mac:"",android:""},
+   desc:{ar:"قُد جيشك وكوّن التحالفات واغزُ الممالك في معارك تكتيكية بالأدوار.",en:"Lead an army, forge alliances and conquer rival kingdoms in turn-based combat.",fr:"Menez une armée, forgez des alliances et conquérez des royaumes au tour par tour."}},
+  {id:11,name:"Bubble Reef Pop",cat:"casual",emoji:"🫧",c:["#00c6ff","#0072ff"],img:"",shots:[],rating:4.2,dl:9900000,size:64,ver:"9.0.3",date:"2026-10-16",dev:"Tidal Games",plats:["android","ios"],
+   links:{android:"",ios:""},
+   desc:{ar:"فجّر الفقاعات الملونة وأنقذ مخلوقات البحر. سهلة التعلم وصعبة التوقف.",en:"Pop colorful bubbles and rescue sea creatures. Easy to learn, hard to put down.",fr:"Éclatez des bulles colorées et sauvez les créatures marines. Facile à prendre en main."}},
+  {id:12,name:"Retro Pixel Jumper",cat:"platformer",emoji:"👾",c:["#8e2de2","#4a00e0"],img:"",shots:[],rating:4.8,dl:3300000,size:36,ver:"1.7.5",date:"2026-08-18",dev:"8Bit Garage",plats:["android","ios","windows","mac","linux"],
+   links:{android:"",ios:"",windows:"",mac:"",linux:""},
+   desc:{ar:"لعبة منصات كلاسيكية بـ 60 مرحلة وغرف سرية وموسيقى رقمية.",en:"A tight, nostalgic platformer with 60 levels, secret rooms and a chiptune soundtrack.",fr:"Un platformer nostalgique avec 60 niveaux, des salles secrètes et une bande-son chiptune."}},
+  {id:13,name:"Zombie Rooftop Survival",cat:"action",emoji:"🧟",c:["#3a1c71","#d76d77"],img:"",shots:[],rating:4.1,dl:2700000,size:330,ver:"3.4.2",date:"2026-06-30",dev:"Grim Works",plats:["android","windows"],
+   links:{android:"",windows:""},
+   desc:{ar:"انجُ بليلتك على الأسطح، اجمع المؤن وحصّن قاعدتك ضد الحشود.",en:"Survive the night on the rooftops. Scavenge supplies and fortify your base.",fr:"Survivez à la nuit sur les toits. Récupérez des ressources et fortifiez votre base."}},
+  {id:14,name:{ar:"شطرنج",en:"Chess",fr:"Échecs"},play:"chess.html",cat:"board",emoji:"♟️",c:["#434343","#000000"],img:"",shots:[],rating:4.9,dl:6700000,size:28,ver:"12.2.0",date:"2026-10-08",dev:"Rook & Knight",plats:["android","ios","windows","mac","linux"],
+   links:{android:"",ios:"",windows:"",mac:"",linux:""},
+   desc:{ar:"العب ضد الذكاء الاصطناعي أو الأصدقاء، مع ألغاز ودروس وتحليل للمباريات.",en:"Play against AI or friends online, with puzzles, lessons and game analysis.",fr:"Jouez contre l'IA ou des amis en ligne, avec énigmes, leçons et analyse de parties."}},
+  {id:15,name:"Tiny Chef Rush",cat:"casual",emoji:"🍳",c:["#fc4a1a","#f7b733"],img:"",shots:[],rating:4.3,dl:3100000,size:88,ver:"2.9.9",date:"2026-09-21",dev:"Spoon Studio",plats:["android","ios"],
+   links:{android:"",ios:""},
+   desc:{ar:"اطبخ وقدّم وطوّر مطبخك في لعبة إدارة مطاعم مليئة بالحماس.",en:"Cook, serve and upgrade your kitchen in this hectic restaurant-management game.",fr:"Cuisinez, servez et améliorez votre cuisine dans ce jeu de gestion de restaurant."}},
+  {id:16,name:"Galaxy Miner Idle",cat:"simulation",emoji:"⛏️",c:["#1d2b64","#f8cdda"],img:"",shots:[],rating:4.4,dl:2100000,size:72,ver:"4.6.0",date:"2026-10-17",dev:"Orbit Labs",plats:["android","ios","windows"],
+   links:{android:"",ios:"",windows:""},
+   desc:{ar:"نقّب في الكويكبات وطوّر الطائرات المسيّرة وتوسّع في المجرة حتى وأنت غائب.",en:"Mine asteroids, upgrade drones and expand across the galaxy — even while you're away.",fr:"Minez des astéroïdes, améliorez vos drones et étendez-vous dans la galaxie, même hors ligne."}}
+];
+
+/* =====================================================================
+   4) APP LOGIC
+   ===================================================================== */
+const $ = s=>document.querySelector(s);
+let lang = "ar";
+try{
+  const saved = localStorage.getItem("fph_lang");
+  const nav = (navigator.language||"ar").slice(0,2);
+  lang = saved && I18N[saved] ? saved : (I18N[nav] ? nav : "ar");
+}catch(e){}
+const t = k => I18N[lang][k] ?? I18N.en[k] ?? k;
+const L = obj => typeof obj==="string" ? obj : (obj[lang] || obj.en || Object.values(obj)[0]);
+
+let state = {q:"",plat:"all",cat:"all",sort:"pop",view:"all"};
+let openId = null;
+let favs = new Set();
+try{ favs = new Set(JSON.parse(localStorage.getItem("fph_favs")||"[]")); }catch(e){}
+const saveFavs = ()=>{ try{ localStorage.setItem("fph_favs",JSON.stringify([...favs])); }catch(e){} };
+
+const fmtDl = n => n>=1e6 ? (n/1e6).toFixed(1)+"M" : n>=1e3 ? Math.round(n/1e3)+"K" : n;
+const fmtSize = mb => mb>=1000 ? (mb/1000).toFixed(1)+" GB" : mb+" MB";
+const stars = r => "★".repeat(Math.round(r))+"☆".repeat(5-Math.round(r));
+const grad = c => `linear-gradient(135deg,${c[0]},${c[1]})`;
+const fmtDate = d => { try{ return new Date(d).toLocaleDateString(I18N[lang].locale,{year:"numeric",month:"short",day:"numeric"}); }catch(e){ return d; } };
+const esc = s => String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const imgTag = src => src ? `<img src="${esc(src)}" alt="" loading="lazy" onerror="this.remove()">` : "";
+const CATS = ["all",...new Set(GAMES.map(g=>g.cat))];
+const catName = k => k==="all" ? t("allCats") : (I18N[lang].cats[k]||k);
+
+function toast(msg){const el=$("#toast");el.textContent=msg;el.classList.add("show");clearTimeout(el._h);el._h=setTimeout(()=>el.classList.remove("show"),2800)}
+
+/* ---- static text ---- */
+function applyLang(){
+  const d = I18N[lang];
+  document.documentElement.lang = lang;
+  document.documentElement.dir = d.dir;
+  document.title = "FreePlay Hub – " + t("statGames");
+  document.querySelectorAll("[data-i18n]").forEach(el=>el.textContent=t(el.dataset.i18n));
+  document.querySelectorAll("[data-i18n-ph]").forEach(el=>el.placeholder=t(el.dataset.i18nPh));
+  $("#lang").value = lang;
+  $("#sort").innerHTML = [["pop","sortPop"],["rate","sortRate"],["new","sortNew"],["size","sortSize"]]
+    .map(([v,k])=>`<option value="${v}" ${state.sort===v?"selected":""}>${t(k)}</option>`).join("");
+  renderFilters(); renderGrid();
+  if(openId) openGame(openId);
+  if(donateOpen) renderDonate();
+}
+
+function renderFilters(){
+  const pr = [["all","🌐 "+t("allPlatforms")],...Object.entries(PLATFORMS).map(([k,v])=>[k,v.icon+" "+v.label])];
+  $("#platRow").innerHTML = pr.map(([k,l])=>`<button class="chip ${state.plat===k?"active":""}" data-plat="${k}">${l}</button>`).join("");
+  $("#catRow").innerHTML = CATS.map(c=>`<button class="chip ${state.cat===c?"active":""}" data-cat="${c}">${catName(c)}</button>`).join("");
+}
+
+function getList(){
+  const q = state.q.trim().toLowerCase();
+  const l = GAMES.filter(g=>
+    (state.view==="all"||favs.has(g.id)) &&
+    (state.plat==="all"||g.plats.includes(state.plat)) &&
+    (state.cat==="all"||g.cat===state.cat) &&
+    (!q || (L(g.name)+" "+g.dev+" "+catName(g.cat)).toLowerCase().includes(q))
+  );
+  const s = {pop:(a,b)=>b.dl-a.dl, rate:(a,b)=>b.rating-a.rating, new:(a,b)=>b.date.localeCompare(a.date), size:(a,b)=>a.size-b.size}[state.sort];
+  return l.sort(s);
+}
+
+function renderGrid(){
+  const list = getList();
+  $("#statGames").textContent = GAMES.length;
+  $("#title").textContent = (state.view==="fav"?t("myFavs"):t("allGames"))+` (${list.length})`;
+  $("#grid").innerHTML = list.length ? list.map(g=>`
+    <article class="card" data-id="${g.id}">
+      <div class="thumb" style="background:${grad(g.c)}">
+        ${g.emoji}${imgTag(g.img)}
+        <span class="badge">${catName(g.cat)}</span>
+        <button class="fav ${favs.has(g.id)?"on":""}" data-fav="${g.id}" aria-label="Favorite">${favs.has(g.id)?"❤":"♡"}</button>
+      </div>
+      <div class="info">
+        <h3>${esc(L(g.name))}</h3>
+        <div class="meta"><span class="stars">★ ${g.rating}</span><span>⬇ ${fmtDl(g.dl)}</span><span>${fmtSize(g.size)}</span></div>
+        <div class="plats">${g.plats.map(p=>`<span title="${PLATFORMS[p].label}">${PLATFORMS[p].icon}</span>`).join("")}</div>
+        ${g.play?`<button class="play-btn" data-play="${g.id}">▶ ${t("playNow")}</button>`:""}
+        <div class="dl-mini">${t("download")}</div>
+      </div>
+    </article>`).join("") : `<div class="empty">${t("noResults")}</div>`;
+}
+
+function openGame(id){
+  const g = GAMES.find(x=>x.id===id); if(!g) return;
+  openId = id;
+  const btns = kind => g.plats.filter(p=>PLATFORMS[p].kind===kind).map(p=>`
+    <button class="dl-btn" data-dl="${g.id}:${p}">
+      <span class="ic">${PLATFORMS[p].icon}</span>
+      <span>${esc(L(g.name))} ${t("downloadFor")} ${PLATFORMS[p].label}<small>${PLATFORMS[p].ext} · v${g.ver} · ${fmtSize(g.size)}</small></span>
+      <span class="go">${t("download")}</span>
+    </button>`).join("");
+  const mob = btns("mobile"), pc = btns("pc");
+  const shots = (g.shots&&g.shots.length ? g.shots : [null,null,null,null]).map((s,i)=>
+    `<div class="shot" style="background:${grad(g.c)};filter:${s?"none":`hue-rotate(${i*25}deg)`}">${s?imgTag(s):g.emoji}</div>`).join("");
+  $("#modal").innerHTML = `
+    <div class="m-head">
+      <div class="m-icon" style="background:${grad(g.c)}">${g.emoji}${imgTag(g.img)}</div>
+      <div><h2>${esc(L(g.name))}</h2><p>${esc(g.dev)} · ${catName(g.cat)}</p><p class="stars">${stars(g.rating)} <span style="color:var(--muted)">${g.rating}</span></p></div>
+      <button class="close" data-close aria-label="Close">✕</button>
+    </div>
+    <div class="m-body">
+      <div class="facts">
+        <div class="fact"><b>${fmtDl(g.dl)}</b><small>${t("downloads")}</small></div>
+        <div class="fact"><b>${fmtSize(g.size)}</b><small>${t("size")}</small></div>
+        <div class="fact"><b>v${g.ver}</b><small>${t("version")}</small></div>
+        <div class="fact"><b>${fmtDate(g.date)}</b><small>${t("updated")}</small></div>
+      </div>
+      ${g.play?`<button class="play-btn big" data-play="${g.id}">▶ ${t("playNow")}</button>`:""}
+      <h4>${t("screenshots")}</h4>
+      <div class="shots">${shots}</div>
+      <h4>${t("about")}</h4>
+      <p class="desc">${esc(L(g.desc))}</p>
+      <h4>${t("download")}</h4>
+      <div class="dl-list">
+        ${mob?`<div class="dl-group">📱 ${t("mobile")}</div>${mob}`:""}
+        ${pc?`<div class="dl-group">🖥️ ${t("pc")}</div>${pc}`:""}
+      </div>
+      <p class="note">${t("tip")}</p>
+    </div>`;
+  $("#overlay").classList.add("open");
+  document.body.style.overflow="hidden";
+}
+function closeModal(){ openId=null; $("#overlay").classList.remove("open"); document.body.style.overflow=""; }
+
+function startDownload(key){
+  const [id,p] = key.split(":"); const g = GAMES.find(x=>x.id==id);
+  const url = g.links && g.links[p];
+  if(!url){ toast(t("noLink")); return; }
+  window.open(url,"_blank","noopener");
+  toast(`⬇ ${t("starting")} ${L(g.name)} (${PLATFORMS[p].label})`);
+}
+
+/* ---- events ---- */
+document.addEventListener("click",e=>{
+  const x = e.target;
+  const fav = x.closest("[data-fav]");
+  if(fav){ e.stopPropagation(); const id=+fav.dataset.fav; favs.has(id)?favs.delete(id):favs.add(id); saveFavs(); renderGrid(); toast(favs.has(id)?t("favAdded"):t("favRemoved")); return; }
+  const dl = x.closest("[data-dl]"); if(dl){ startDownload(dl.dataset.dl); return; }
+  const pl = x.closest("[data-play]"); if(pl){ e.stopPropagation(); openPlayer(+pl.dataset.play); return; }
+  if(x.closest("[data-close-player]")){ closePlayer(); return; }
+  if(x.closest("[data-close]") || x===$("#overlay")){ closeModal(); return; }
+  const card = x.closest(".card"); if(card){ openGame(+card.dataset.id); return; }
+  const plat = x.closest("[data-plat]"); if(plat){ state.plat=plat.dataset.plat; renderFilters(); renderGrid(); return; }
+  const cat = x.closest("[data-cat]"); if(cat){ state.cat=cat.dataset.cat; renderFilters(); renderGrid(); return; }
+  const view = x.closest("[data-view]"); if(view){ state.view=view.dataset.view; document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("active",b===view)); renderGrid(); return; }
+});
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeModal(); });
+$("#q").addEventListener("input",e=>{ state.q=e.target.value; renderGrid(); });
+$("#sort").addEventListener("change",e=>{ state.sort=e.target.value; renderGrid(); });
+$("#lang").addEventListener("change",e=>{ lang=e.target.value; try{localStorage.setItem("fph_lang",lang)}catch(_){} applyLang(); });
+$("#logo").addEventListener("click",e=>{
+  e.preventDefault();
+  state={q:"",plat:"all",cat:"all",sort:"pop",view:"all"}; $("#q").value="";
+  document.querySelectorAll("[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view==="all"));
+  applyLang(); window.scrollTo({top:0,behavior:"smooth"});
+});
+
+/* =====================================================================
+   5) PAYPAL DONATIONS
+   Set ONE of these:
+     username       : your PayPal.Me name  (https://paypal.me/YourName)  <- recommended, supports preset amounts
+     hostedButtonId : the ID of a PayPal "Donate" button (amount chosen on PayPal)
+   ===================================================================== */
+const PAYPAL = { username:"", hostedButtonId:"", currency:"USD", amounts:[3,5,10,20] };
+let donateOpen = false, donAmt = 5;
+
+function payUrl(amount){
+  if(PAYPAL.username) return `https://www.paypal.com/paypalme/${encodeURIComponent(PAYPAL.username)}/${amount}${PAYPAL.currency}`;
+  if(PAYPAL.hostedButtonId) return `https://www.paypal.com/donate/?hosted_button_id=${encodeURIComponent(PAYPAL.hostedButtonId)}&currency_code=${PAYPAL.currency}`;
+  return null;
+}
+function renderDonate(){
+  $("#donateModal").innerHTML = `
+    <button class="close" data-close-donate aria-label="Close">✕</button>
+    <h2>💙 ${t("donateTitle")}</h2>
+    <p>${t("donateChoose")}</p>
+    <div class="amounts">${PAYPAL.amounts.map(a=>`<button class="amt ${a===donAmt?"active":""}" data-amt="${a}">${a} ${PAYPAL.currency}</button>`).join("")}</div>
+    <input class="d-custom" id="dCustom" type="number" min="1" step="1" inputmode="decimal" placeholder="${t("donateOther")} (${PAYPAL.currency})">
+    <button class="d-go" id="dGo">💳 ${t("donateGo")}</button>
+    <p class="d-note">${t("donateSecure")}</p>`;
+  $("#dCustom").addEventListener("input",e=>{
+    const v = parseFloat(e.target.value);
+    donAmt = v>0 ? v : 0;
+    document.querySelectorAll(".amt").forEach(b=>b.classList.remove("active"));
+  });
+}
+function openDonate(){ donateOpen=true; renderDonate(); $("#donateOverlay").classList.add("open"); document.body.style.overflow="hidden"; }
+function closeDonate(){ donateOpen=false; $("#donateOverlay").classList.remove("open"); document.body.style.overflow=""; }
+
+document.addEventListener("click",e=>{
+  const x = e.target;
+  if(x.closest("[data-donate]")){ openDonate(); return; }
+  if(x.closest("[data-close-donate]") || x===$("#donateOverlay")){ closeDonate(); return; }
+  const amt = x.closest("[data-amt]");
+  if(amt){ donAmt=+amt.dataset.amt; document.querySelectorAll(".amt").forEach(b=>b.classList.toggle("active",b===amt)); const c=$("#dCustom"); if(c) c.value=""; return; }
+  if(x.closest("#dGo")){
+    if(!(donAmt>0)){ toast(t("donateInvalid")); return; }
+    const url = payUrl(donAmt);
+    if(!url){ toast(t("donateNoConfig")); return; }
+    window.open(url,"_blank","noopener");
+    toast(t("donateThanks"));
+    closeDonate();
+  }
+});
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeDonate(); });
+
+/* =====================================================================
+   6) PLAY NOW — games with a "play" field (a local page or a URL)
+      open full-screen inside the site.
+   ===================================================================== */
+let playingId = null, blobUrl = null;
+/* Game pages embedded inside this file (so no separate file is needed). */
+const EMBEDDED = {"chess.html": "<!DOCTYPE html>\n<html lang=\"ar\" dir=\"rtl\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no\">\n<meta name=\"theme-color\" content=\"#262421\">\n<title>♚ شطرنج<\/title>\n<style>\n  :root { --board: min(96vw, 70vh, 560px); }\n  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }\n  body {\n    margin: 0; background: #262421; color: #eee; display: flex; justify-content: center;\n    font-family: system-ui, \"Segoe UI\", Tahoma, Arial, sans-serif;\n  }\n  #app { width: var(--board); padding: 8px 0 28px; }\n  #status { text-align: center; font-weight: 700; font-size: 1.05rem; padding: 6px 0; min-height: 2rem; }\n  .cap { font-size: .95rem; min-height: 1.5rem; padding: 2px 4px; color: #ccc; }\n  .cap b { font-size: 1.15rem; letter-spacing: 1px; color: #fff; }\n  #board {\n    display: grid; grid-template-columns: repeat(8, 1fr); direction: ltr;\n    width: var(--board); height: var(--board); border-radius: 4px; overflow: hidden;\n    user-select: none; touch-action: manipulation;\n  }\n  .sq {\n    position: relative; display: flex; align-items: center; justify-content: center;\n    font-size: calc(var(--board) / 8 * .78); line-height: 1; cursor: pointer;\n  }\n  .sq.l { background: #f0d9b5; } .sq.d { background: #b58863; }\n  .sq.l.last { background: #f7ec8b; } .sq.d.last { background: #dac34b; }\n  .sq.sel { background: #f6f669 !important; }\n  .sq.chk { background: #e57373 !important; }\n  .sq.dot::after {\n    content: \"\"; position: absolute; width: 24%; height: 24%; border-radius: 50%;\n    background: rgba(50, 140, 50, .75); pointer-events: none;\n  }\n  .sq.capt::after {\n    content: \"\"; position: absolute; inset: 3px; border: 4px solid rgba(50, 140, 50, .85);\n    border-radius: 8px; pointer-events: none;\n  }\n  .pc { font-family: \"Segoe UI Symbol\", \"Noto Sans Symbols 2\", \"Arial Unicode MS\", \"DejaVu Sans\", sans-serif; z-index: 1; }\n  .pc.w { color: #fff; text-shadow: 1px 0 #000, -1px 0 #000, 0 1px #000, 0 -1px #000, 1px 1px #000, -1px -1px #000, 1px -1px #000, -1px 1px #000; }\n  .pc.b { color: #111; }\n  .rk, .fl { position: absolute; font-style: normal; font-size: calc(var(--board) / 8 * .17); color: #5a4630; opacity: .85; }\n  .rk { top: 2px; left: 3px; } .fl { bottom: 1px; right: 3px; }\n  #controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; align-items: center; }\n  select, button {\n    font: inherit; padding: 8px 12px; border-radius: 8px; border: 1px solid #555;\n    background: #3a3733; color: #eee; cursor: pointer;\n  }\n  button:active { background: #55514b; }\n  #moves {\n    margin-top: 8px; background: #1f1d1b; border-radius: 8px; padding: 8px; max-height: 130px;\n    overflow-y: auto; direction: ltr; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .9rem; line-height: 1.7;\n  }\n  #moves span { display: inline-block; margin-right: 12px; white-space: nowrap; }\n  #moves em { color: #888; font-style: normal; }\n  #overlay {\n    position: fixed; inset: 0; background: rgba(0, 0, 0, .6); display: flex;\n    align-items: center; justify-content: center; z-index: 10;\n  }\n  #overlay[hidden] { display: none; }\n  #ovbox { background: #34312d; padding: 20px 24px; border-radius: 14px; text-align: center; min-width: 240px; }\n  #ovbox h3 { margin: 0 0 14px; }\n  #ovbox .row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }\n  .pbtn { font-size: 2.2rem; line-height: 1; padding: 6px 14px; color: #fff; font-family: \"Segoe UI Symbol\", \"Noto Sans Symbols 2\", sans-serif; }\n<\/style>\n<\/head>\n<body>\n<div id=\"app\">\n  <div id=\"status\"><\/div>\n  <div class=\"cap\" id=\"capB\"><\/div>\n  <div id=\"board\"><\/div>\n  <div class=\"cap\" id=\"capW\"><\/div>\n  <div id=\"controls\">\n    <select id=\"mode\" aria-label=\"وضع اللعب\">\n      <option value=\"2p\">لاعبان<\/option>\n      <option value=\"w\">ضد الكمبيوتر (أنا الأبيض)<\/option>\n      <option value=\"b\">ضد الكمبيوتر (أنا الأسود)<\/option>\n    <\/select>\n    <select id=\"level\" aria-label=\"المستوى\">\n      <option value=\"1\">سهل<\/option>\n      <option value=\"2\" selected>متوسط<\/option>\n      <option value=\"3\">صعب<\/option>\n    <\/select>\n    <button id=\"btnNew\">لعبة جديدة<\/button>\n    <button id=\"btnUndo\">تراجع<\/button>\n    <button id=\"btnFlip\">اقلب اللوحة<\/button>\n  <\/div>\n  <div id=\"moves\"><\/div>\n<\/div>\n<div id=\"overlay\" hidden><div id=\"ovbox\"><\/div><\/div>\n\n<script id=\"logic\">\n/* ======================= منطق اللعبة ======================= */\nconst GLYPH = { K: \"♚︎\", Q: \"♛︎\", R: \"♜︎\", B: \"♝︎\", N: \"♞︎\", P: \"♟︎\" };\nconst VAL = { P: 100, N: 320, B: 330, R: 500, Q: 900, K: 0 };\nconst INIT = { Q: 1, R: 2, B: 2, N: 2, P: 8 };\nconst KNIGHT = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];\nconst KING = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];\nconst DIAG = [[-1,-1],[-1,1],[1,-1],[1,1]];\nconst STRAIGHT = [[-1,0],[1,0],[0,-1],[0,1]];\nconst inside = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;\nconst sqName = (r, c) => \"abcdefgh\"[c] + (8 - r);\n\nclass Game {\n  constructor() { this.reset(); }\n\n  reset() {\n    const back = \"RNBQKBNR\".split(\"\");\n    this.board = [\n      back.map(p => \"b\" + p), Array(8).fill(\"bP\"),\n      Array(8).fill(null), Array(8).fill(null), Array(8).fill(null), Array(8).fill(null),\n      Array(8).fill(\"wP\"), back.map(p => \"w\" + p),\n    ];\n    this.turn = \"w\";\n    this.castle = { wK: 1, wQ: 1, bK: 1, bQ: 1 };\n    this.ep = null;\n    this.over = false;\n    this.result = null;      // {kind:\"mate\", info:\"الأبيض\"} أو {kind:\"draw\", info:\"...\"}\n    this.halfmove = 0;\n    this.last = null;\n    this.hist = []; this.san = [];\n    this.keys = [this.key()];\n  }\n\n  clone() {\n    const g = Object.create(Game.prototype);\n    g.board = this.board.map(r => r.slice());\n    g.turn = this.turn; g.castle = { ...this.castle }; g.ep = this.ep;\n    g.over = this.over; g.result = this.result; g.halfmove = this.halfmove; g.last = this.last;\n    g.hist = []; g.san = []; g.keys = [];\n    return g;\n  }\n\n  key() {\n    return this.board.map(r => r.map(p => p || \"--\").join(\"\")).join(\"/\") + this.turn +\n      Object.values(this.castle).join(\"\") + (this.ep ? this.ep.join(\"\") : \"-\");\n  }\n\n  attacked(b, r, c, by) {\n    const d = by === \"w\" ? 1 : -1;\n    for (const dc of [-1, 1]) if (inside(r + d, c + dc) && b[r + d][c + dc] === by + \"P\") return true;\n    for (const [dr, dc] of KNIGHT) if (inside(r + dr, c + dc) && b[r + dr][c + dc] === by + \"N\") return true;\n    for (const [dr, dc] of KING) if (inside(r + dr, c + dc) && b[r + dr][c + dc] === by + \"K\") return true;\n    for (const [dirs, kinds] of [[DIAG, \"BQ\"], [STRAIGHT, \"RQ\"]]) {\n      for (const [dr, dc] of dirs) {\n        let rr = r + dr, cc = c + dc;\n        while (inside(rr, cc)) {\n          const p = b[rr][cc];\n          if (p) { if (p[0] === by && kinds.includes(p[1])) return true; break; }\n          rr += dr; cc += dc;\n        }\n      }\n    }\n    return false;\n  }\n\n  kingPos(b, color) {\n    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if (b[r][c] === color + \"K\") return [r, c];\n    return null;\n  }\n\n  inCheck(b, color) {\n    const k = this.kingPos(b, color);\n    return this.attacked(b, k[0], k[1], color === \"w\" ? \"b\" : \"w\");\n  }\n\n  pseudo(r, c) {\n    const b = this.board, piece = b[r][c], color = piece[0], t = piece[1];\n    const enemy = color === \"w\" ? \"b\" : \"w\", out = [];\n    if (t === \"P\") {\n      const d = color === \"w\" ? -1 : 1, start = color === \"w\" ? 6 : 1;\n      if (inside(r + d, c) && !b[r + d][c]) {\n        out.push([r + d, c]);\n        if (r === start && !b[r + 2 * d][c]) out.push([r + 2 * d, c]);\n      }\n      for (const dc of [-1, 1]) {\n        const rr = r + d, cc = c + dc;\n        if (!inside(rr, cc)) continue;\n        if ((b[rr][cc] && b[rr][cc][0] === enemy) || (this.ep && this.ep[0] === rr && this.ep[1] === cc)) out.push([rr, cc]);\n      }\n    } else if (t === \"N\" || t === \"K\") {\n      for (const [dr, dc] of (t === \"N\" ? KNIGHT : KING)) {\n        const rr = r + dr, cc = c + dc;\n        if (inside(rr, cc) && (!b[rr][cc] || b[rr][cc][0] === enemy)) out.push([rr, cc]);\n      }\n      if (t === \"K\") {\n        const row = color === \"w\" ? 7 : 0;\n        if (r === row && c === 4 && !this.attacked(b, row, 4, enemy)) {\n          if (this.castle[color + \"K\"] && !b[row][5] && !b[row][6] && b[row][7] === color + \"R\" &&\n              !this.attacked(b, row, 5, enemy) && !this.attacked(b, row, 6, enemy)) out.push([row, 6]);\n          if (this.castle[color + \"Q\"] && !b[row][1] && !b[row][2] && !b[row][3] && b[row][0] === color + \"R\" &&\n              !this.attacked(b, row, 3, enemy) && !this.attacked(b, row, 2, enemy)) out.push([row, 2]);\n        }\n      }\n    } else {\n      const dirs = t === \"B\" ? DIAG : t === \"R\" ? STRAIGHT : DIAG.concat(STRAIGHT);\n      for (const [dr, dc] of dirs) {\n        let rr = r + dr, cc = c + dc;\n        while (inside(rr, cc)) {\n          if (!b[rr][cc]) out.push([rr, cc]);\n          else { if (b[rr][cc][0] === enemy) out.push([rr, cc]); break; }\n          rr += dr; cc += dc;\n        }\n      }\n    }\n    return out;\n  }\n\n  apply(b, fr, to, promo = \"Q\") {\n    const [r1, c1] = fr, [r2, c2] = to, piece = b[r1][c1];\n    if (piece[1] === \"P\" && this.ep && this.ep[0] === r2 && this.ep[1] === c2 && c1 !== c2 && !b[r2][c2]) b[r1][c2] = null;\n    if (piece[1] === \"K\" && Math.abs(c2 - c1) === 2) {\n      if (c2 === 6) { b[r1][5] = b[r1][7]; b[r1][7] = null; }\n      else { b[r1][3] = b[r1][0]; b[r1][0] = null; }\n    }\n    b[r2][c2] = piece; b[r1][c1] = null;\n    if (piece[1] === \"P\" && (r2 === 0 || r2 === 7)) b[r2][c2] = piece[0] + promo;\n  }\n\n  legal(r, c) {\n    const color = this.board[r][c][0], res = [];\n    for (const to of this.pseudo(r, c)) {\n      const b = this.board.map(row => row.slice());\n      this.apply(b, [r, c], to);\n      if (!this.inCheck(b, color)) res.push(to);\n    }\n    return res;\n  }\n\n  hasMoves(color) {\n    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {\n      const p = this.board[r][c];\n      if (p && p[0] === color && this.legal(r, c).length) return true;\n    }\n    return false;\n  }\n\n  insufficient() {\n    const ps = [];\n    for (const row of this.board) for (const p of row) if (p && p[1] !== \"K\") ps.push(p[1]);\n    return ps.length === 0 || (ps.length === 1 && (ps[0] === \"B\" || ps[0] === \"N\"));\n  }\n\n  sanBase(fr, to, piece, capture, promo) {\n    const [r1, c1] = fr, [r2, c2] = to, t = piece[1];\n    if (t === \"K\" && Math.abs(c2 - c1) === 2) return c2 === 6 ? \"O-O\" : \"O-O-O\";\n    const dest = sqName(r2, c2);\n    if (t === \"P\") return (capture ? \"abcdefgh\"[c1] + \"x\" : \"\") + dest + ((r2 === 0 || r2 === 7) ? \"=\" + promo : \"\");\n    let s = t;\n    const others = [];\n    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {\n      if ((r !== r1 || c !== c1) && this.board[r][c] === piece &&\n          this.legal(r, c).some(m => m[0] === r2 && m[1] === c2)) others.push([r, c]);\n    }\n    if (others.length) {\n      if (others.every(o => o[1] !== c1)) s += \"abcdefgh\"[c1];\n      else if (others.every(o => o[0] !== r1)) s += String(8 - r1);\n      else s += sqName(r1, c1);\n    }\n    return s + (capture ? \"x\" : \"\") + dest;\n  }\n\n  move(fr, to, promo = \"Q\", fast = false) {\n    this.hist.push({\n      board: this.board.map(r => r.slice()), turn: this.turn, castle: { ...this.castle }, ep: this.ep,\n      over: this.over, result: this.result, halfmove: this.halfmove, last: this.last,\n      ns: this.san.length, nk: this.keys.length,\n    });\n    const [r1, c1] = fr, [r2, c2] = to;\n    const piece = this.board[r1][c1], color = piece[0], t = piece[1];\n    const capture = !!this.board[r2][c2] ||\n      (t === \"P\" && this.ep && this.ep[0] === r2 && this.ep[1] === c2 && c1 !== c2);\n    const base = fast ? null : this.sanBase(fr, to, piece, capture, promo);\n\n    this.apply(this.board, fr, to, promo);\n    if (t === \"K\") { this.castle[color + \"K\"] = 0; this.castle[color + \"Q\"] = 0; }\n    for (const [rr, cc, k] of [[7,0,\"wQ\"],[7,7,\"wK\"],[0,0,\"bQ\"],[0,7,\"bK\"]])\n      if ((r1 === rr && c1 === cc) || (r2 === rr && c2 === cc)) this.castle[k] = 0;\n    this.ep = (t === \"P\" && Math.abs(r2 - r1) === 2) ? [(r1 + r2) / 2, c1] : null;\n    this.halfmove = (t === \"P\" || capture) ? 0 : this.halfmove + 1;\n    this.turn = color === \"w\" ? \"b\" : \"w\";\n    this.last = [fr, to];\n    if (fast) return null;\n\n    const opp = this.turn, check = this.inCheck(this.board, opp);\n    this.keys.push(this.key());\n    let suffix = \"\";\n    if (!this.hasMoves(opp)) {\n      this.over = true;\n      if (check) { suffix = \"#\"; this.result = { kind: \"mate\", info: color === \"w\" ? \"الأبيض\" : \"الأسود\" }; }\n      else this.result = { kind: \"draw\", info: \"جمود (Stalemate)\" };\n    } else {\n      suffix = check ? \"+\" : \"\";\n      const last = this.keys[this.keys.length - 1];\n      if (this.insufficient()) { this.over = true; this.result = { kind: \"draw\", info: \"مواد غير كافية للكش مات\" }; }\n      else if (this.halfmove >= 100) { this.over = true; this.result = { kind: \"draw\", info: \"قاعدة الخمسين نقلة\" }; }\n      else if (this.keys.filter(k => k === last).length >= 3) { this.over = true; this.result = { kind: \"draw\", info: \"تكرار الوضعية ثلاث مرات\" }; }\n    }\n    this.san.push(base + suffix);\n    return this.over ? \"over\" : (check ? \"check\" : \"ok\");\n  }\n\n  undo() {\n    const h = this.hist.pop();\n    if (!h) return false;\n    this.board = h.board; this.turn = h.turn; this.castle = h.castle; this.ep = h.ep;\n    this.over = h.over; this.result = h.result; this.halfmove = h.halfmove; this.last = h.last;\n    this.san.length = h.ns; this.keys.length = h.nk;\n    return true;\n  }\n}\n\n/* ======================= الذكاء الاصطناعي ======================= */\nfunction evaluate(g) {\n  let s = 0;\n  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {\n    const p = g.board[r][c];\n    if (!p) continue;\n    const t = p[1];\n    let v = VAL[t];\n    const d = Math.abs(r - 3.5) + Math.abs(c - 3.5);\n    if (t === \"N\" || t === \"B\") v += Math.trunc(14 - 4 * d);\n    else if (t === \"P\") {\n      const adv = p[0] === \"w\" ? 6 - r : r - 1;\n      v += adv * 6 + Math.trunc(Math.max(0, 3 - d) * 2);\n    }\n    s += p[0] === \"w\" ? v : -v;\n  }\n  return g.turn === \"w\" ? s : -s;\n}\n\nfunction orderedMoves(g) {\n  const ms = [];\n  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {\n    const p = g.board[r][c];\n    if (!p || p[0] !== g.turn) continue;\n    for (const to of g.legal(r, c)) {\n      const v = g.board[to[0]][to[1]];\n      let score = v ? VAL[v[1]] * 10 - VAL[p[1]] : 0;\n      if (p[1] === \"P\" && (to[0] === 0 || to[0] === 7)) score += 800;\n      ms.push([score, Math.random(), [r, c], to]);\n    }\n  }\n  ms.sort((a, b) => b[0] - a[0] || b[1] - a[1]);\n  return ms.map(m => [m[2], m[3]]);\n}\n\nfunction search(g, depth, alpha, beta) {\n  if (depth === 0) return evaluate(g);\n  const moves = orderedMoves(g);\n  if (!moves.length) return g.inCheck(g.board, g.turn) ? -100000 - depth : 0;\n  let best = -1e9;\n  for (const [fr, to] of moves) {\n    g.move(fr, to, \"Q\", true);\n    const s = -search(g, depth - 1, -beta, -alpha);\n    g.undo();\n    if (s > best) best = s;\n    if (s > alpha) alpha = s;\n    if (alpha >= beta) break;\n  }\n  return best;\n}\n\nfunction bestMove(g, depth, noise) {\n  let best = null, bestS = -1e9, alpha = -1e9;\n  for (const [fr, to] of orderedMoves(g)) {\n    g.move(fr, to, \"Q\", true);\n    let s = -search(g, depth - 1, -1e9, -alpha);\n    g.undo();\n    s += Math.floor(Math.random() * (2 * noise + 1)) - noise;\n    if (s > bestS) { bestS = s; best = [fr, to]; }\n    if (s > alpha) alpha = s;\n  }\n  return best;\n}\n\nconst LEVELS = { 1: [1, 60], 2: [2, 10], 3: [4, 3] };   // [العمق، العشوائية]\n<\/script>\n\n<script id=\"ui\">\n/* ============================ الواجهة ============================ */\nconst g = new Game();\nlet sel = null, targets = [], flip = false, thinking = false, busy = false, token = 0;\nconst $ = id => document.getElementById(id);\nconst human = () => { const m = $(\"mode\").value; return m === \"2p\" ? null : m; };\n\nfunction draw() {\n  const kc = g.inCheck(g.board, g.turn) ? g.kingPos(g.board, g.turn) : null;\n  let html = \"\";\n  for (let dr = 0; dr < 8; dr++) for (let dc = 0; dc < 8; dc++) {\n    const r = flip ? 7 - dr : dr, c = flip ? 7 - dc : dc;\n    let cls = \"sq \" + ((r + c) % 2 === 0 ? \"l\" : \"d\");\n    if (g.last && g.last.some(s => s[0] === r && s[1] === c)) cls += \" last\";\n    if (sel && sel[0] === r && sel[1] === c) cls += \" sel\";\n    else if (kc && kc[0] === r && kc[1] === c) cls += \" chk\";\n    const p = g.board[r][c];\n    if (targets.some(t => t[0] === r && t[1] === c)) cls += p ? \" capt\" : \" dot\";\n    html += `<div class=\"${cls}\" data-r=\"${r}\" data-c=\"${c}\">`;\n    if (p) html += `<span class=\"pc ${p[0]}\">${GLYPH[p[1]]}<\/span>`;\n    if (dc === 0) html += `<i class=\"rk\">${8 - r}<\/i>`;\n    if (dr === 7) html += `<i class=\"fl\">${\"abcdefgh\"[c]}<\/i>`;\n    html += \"<\/div>\";\n  }\n  $(\"board\").innerHTML = html;\n  panel();\n}\n\nfunction panel() {\n  let txt;\n  if (g.over) txt = g.result.kind === \"mate\" ? `كش مات! فاز ${g.result.info}` : `تعادل: ${g.result.info}`;\n  else if (thinking) txt = \"الكمبيوتر يفكر…\";\n  else {\n    txt = \"الدور على: \" + (g.turn === \"w\" ? \"الأبيض\" : \"الأسود\");\n    if (g.inCheck(g.board, g.turn)) txt += \" — كش!\";\n  }\n  $(\"status\").textContent = txt;\n\n  const cnt = { w: { Q: 0, R: 0, B: 0, N: 0, P: 0 }, b: { Q: 0, R: 0, B: 0, N: 0, P: 0 } };\n  const mat = { w: 0, b: 0 };\n  for (const row of g.board) for (const p of row) if (p && p[1] !== \"K\") { cnt[p[0]][p[1]]++; mat[p[0]] += VAL[p[1]]; }\n  const diff = Math.trunc((mat.w - mat.b) / 100);\n  const lost = col => \"QRBNP\".split(\"\").map(k => GLYPH[k].repeat(Math.max(0, INIT[k] - cnt[col][k]))).join(\"\");\n  $(\"capW\").innerHTML = `أخذها الأبيض: <b>${lost(\"b\")}<\/b>${diff > 0 ? ` (+${diff})` : \"\"}`;\n  $(\"capB\").innerHTML = `أخذها الأسود: <b>${lost(\"w\")}<\/b>${diff < 0 ? ` (+${-diff})` : \"\"}`;\n\n  let mv = \"\";\n  for (let i = 0; i < g.san.length; i += 2)\n    mv += `<span><em>${i / 2 + 1}.<\/em> ${g.san[i]} ${g.san[i + 1] || \"\"}<\/span>`;\n  const box = $(\"moves\");\n  box.innerHTML = mv;\n  box.scrollTop = box.scrollHeight;\n}\n\nfunction showOverlay(html, onClick) {\n  const o = $(\"overlay\");\n  $(\"ovbox\").innerHTML = html;\n  o.hidden = false;\n  o.onclick = e => { const b = e.target.closest(\"[data-k]\"); if (b) { o.hidden = true; o.onclick = null; onClick(b.dataset.k); } };\n}\n\nfunction askPromo() {\n  return new Promise(res => showOverlay(\n    `<h3>اختر القطعة<\/h3><div class=\"row\">` +\n    \"QRBN\".split(\"\").map(k => `<button class=\"pbtn\" data-k=\"${k}\">${GLYPH[k]}<\/button>`).join(\"\") + `<\/div>`, res));\n}\n\nfunction announce() {\n  const t = g.result.kind === \"mate\" ? `كش مات! فاز ${g.result.info}` : `تعادل: ${g.result.info}`;\n  showOverlay(`<h3>${t}<\/h3><div class=\"row\"><button data-k=\"new\">لعبة جديدة<\/button><button data-k=\"x\">إغلاق<\/button><\/div>`,\n    k => { if (k === \"new\") newGame(); });\n}\n\nfunction afterMove() {\n  draw();\n  if (g.over) announce(); else maybeAI();\n}\n\nfunction maybeAI() {\n  const h = human();\n  if (!h || g.over || g.turn === h) return;\n  thinking = true; draw();\n  const [depth, noise] = LEVELS[$(\"level\").value];\n  const clone = g.clone(), tk = token;\n  setTimeout(() => {\n    const mv = bestMove(clone, depth, noise);\n    if (tk !== token) return;\n    thinking = false;\n    if (mv) g.move(mv[0], mv[1], \"Q\");\n    afterMove();\n  }, 60);\n}\n\nfunction newGame() {\n  token++; thinking = false; busy = false;\n  g.reset(); sel = null; targets = [];\n  flip = $(\"mode\").value === \"b\";\n  $(\"overlay\").hidden = true;\n  draw(); maybeAI();\n}\n\nfunction undo() {\n  if (thinking || busy) return;\n  if (!g.undo()) return;\n  const h = human();\n  if (h && g.turn !== h) g.undo();\n  sel = null; targets = [];\n  draw(); maybeAI();\n}\n\n$(\"board\").addEventListener(\"click\", async e => {\n  const cell = e.target.closest(\".sq\");\n  if (!cell || g.over || thinking || busy) return;\n  const h = human();\n  if (h && g.turn !== h) return;\n  const r = +cell.dataset.r, c = +cell.dataset.c;\n  if (sel && targets.some(t => t[0] === r && t[1] === c)) {\n    const fr = sel, piece = g.board[fr[0]][fr[1]];\n    let promo = \"Q\";\n    if (piece[1] === \"P\" && (r === 0 || r === 7)) { busy = true; promo = await askPromo(); busy = false; }\n    sel = null; targets = [];\n    g.move(fr, [r, c], promo);\n    afterMove();\n    return;\n  }\n  const p = g.board[r][c];\n  if (p && p[0] === g.turn) { sel = [r, c]; targets = g.legal(r, c); } else { sel = null; targets = []; }\n  draw();\n});\n\n$(\"btnNew\").onclick = newGame;\n$(\"btnUndo\").onclick = undo;\n$(\"btnFlip\").onclick = () => { flip = !flip; draw(); };\n$(\"mode\").onchange = newGame;\ndocument.addEventListener(\"keydown\", e => { if ((e.ctrlKey || e.metaKey) && e.key === \"z\") undo(); });\n\nnewGame();\n<\/script>\n<\/body>\n<\/html>\n"};
+function openPlayer(id){
+  const g = GAMES.find(x=>x.id===id); if(!g || !g.play) return;
+  playingId = id;
+  $("#pTitle").textContent = "🎮 " + L(g.name);
+  $("#pNewTxt").textContent = t("openNewTab");
+  $("#pCloseTxt").textContent = t("closePlayer");
+  const fr = $("#pFrame"), html = EMBEDDED[g.play];
+  if(html){
+    blobUrl = URL.createObjectURL(new Blob([html],{type:"text/html;charset=utf-8"}));
+    $("#pNew").href = blobUrl;
+    fr.srcdoc = html;
+  } else {
+    $("#pNew").href = g.play;
+    fr.removeAttribute("srcdoc");
+    fr.src = g.play;
+  }
+  $("#playerOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function closePlayer(){
+  playingId = null;
+  const fr = $("#pFrame"); fr.removeAttribute("srcdoc"); fr.src = "about:blank";
+  if(blobUrl){ URL.revokeObjectURL(blobUrl); blobUrl = null; }
+  $("#playerOverlay").classList.remove("open");
+  document.body.style.overflow = openId || donateOpen ? "hidden" : "";
+}
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && playingId) closePlayer(); });
+
+$("#yr").textContent = new Date().getFullYear();
+applyLang();
+</script>
+</body>
+</html>
